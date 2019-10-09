@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/home/philip/Documents/Google Drive/Development/repos/CS_3340_Proj/build",
-  "command": "/usr/bin/g++-7    -g   -o CMakeFiles/CS_3340_PROJ.dir/proj.cpp.o -c \"/home/philip/Documents/Google Drive/Development/repos/CS_3340_Proj/proj.cpp\"",
-  "file": "/home/philip/Documents/Google Drive/Development/repos/CS_3340_Proj/proj.cpp"
-}
-]
