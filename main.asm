@@ -112,6 +112,11 @@
 	addu $at, %array, $at
 	sw %register, ($at)	
 .end_macro
+#	same as set arry but it works wth immidiates
+.macro setArrayI(%array, %index, %value)
+	li $a0, %value
+	setArray(%array, %index, $a0)
+.end_macro
 #	returns value at index from an array address
 #	$v0 contains the word
 .macro readArray(%array, %index)
@@ -121,6 +126,12 @@
 	addu $at, %array, $at
 	lw $v0, ($at)	
 .end_macro
+# 	frees up array memory
+#.macro freeArray(%array)
+#	li $at, %array
+#	lw $at, ($at)
+	
+#.end_macro
 # ============================================
 # DATA
 .data
@@ -282,13 +293,22 @@ print_card: # a0 is mask, a1 is max
 
 #===================
 #Bitmap macros
-
+.macro bm_drawRectangle(%leftX, %topY, %width, %height, %colorCode)
+	lw $v0, macroDrawRectangleArray
+	setArrayI($v0, 0, %leftX)
+	setArrayI($v0, 1, %topY)
+	setArrayI($v0, 2, %width)
+	setArrayI($v0, 3, %height)
+	setArrayI($v0, 4, %colorCode)
+	jal bm_drawRectangle
+.end_macro
 
 #===================
 #DATA Constants
 .data
 frameBuffer:
 .space 0x80000 # space for a 512x256 image in the 0x10010000 data range
+macroDrawRectangleArray: .word 0 # array address for the macro that fills the array to be passed to bm_drawRectangle
 
 #===================
 # Functions
@@ -300,40 +320,77 @@ bm_setup:
 ########################
 	fstart
 	
-	print_str("###########################################################\n")
-	print_str("#                MARS Bitmap Display Setup                #\n")
-	print_str("# This program makes use of the MARS bitmap display tool! #\n")
-	print_str("# To enable the display please follow these instructions. #\n")
-	print_str("# 1. Go to \"Tools\" > \"Bitmap Display\"                     #\n")
-	print_str("# 2. Ensure the following settings match your tool        #\n")
-	print_str("#    The first 2 options are \"1\"                          #\n")
-	print_str("#    Width is 512                                         #\n")
-	print_str("#    Height is 256                                        #\n")
-	print_str("#    Base address is set to 0x10010000                    #\n")
-	print_str("# 3. Click on \"Connect to MIPS\"                           #\n")
-	print_str("# The cards will still be printed in the console          #\n")
-	print_str("###########################################################\n")
+		print_str("###########################################################\n")
+		print_str("#                MARS Bitmap Display Setup                #\n")
+		print_str("# This program makes use of the MARS bitmap display tool! #\n")
+		print_str("# To enable the display please follow these instructions. #\n")
+		print_str("# 1. Go to \"Tools\" > \"Bitmap Display\"                     #\n")
+		print_str("# 2. Ensure the following settings match your tool        #\n")
+		print_str("#    The first 2 options are \"1\"                          #\n")
+		print_str("#    Width is 512                                         #\n")
+		print_str("#    Height is 256                                        #\n")
+			print_str("#    Base address is set to 0x10010000                    #\n")
+		print_str("# 3. Click on \"Connect to MIPS\"                           #\n")
+		print_str("# The cards will still be printed in the console          #\n")
+		print_str("###########################################################\n")
 	
-	jal bm_buildBackground #go build the background
+		newArray(5) # make array for drawRetangle
+		sw $v0, macroDrawRectangleArray
+	
+		jal bm_buildBackground #go build the background
 	freturn
 bm_buildBackground:
 ################
 # This function Builds the base of the bitmap image
 ################
 	fstart
-	stackgrow(4)
-	stackstore(0, $t0)
-	
-		newArray(5)
-		li $t0, 3
-		setArray($v0, 3, $t0)
 		
-	stackload(0, $t0)
-	stackpop
+		bm_drawRectangle(0,0,512,256,0xadd8e6)
+		
 	freturn
 
 bm_drawRectangle:
 #################
 # This function draws a rectangle with a solid color
+# Temps:
+# $t0 - our frame buffer
+# $t1 through $t5 - Our params as temps
+# Paramater: 
 # $a0 - address of array that has the following params: [leftX, topY, width, height, colorCode]
 #################
+	fstart
+	stackgrow(24)
+	stackstore(0, $t0)
+	stackstore(1, $t1)
+	stackstore(2, $t2)
+	stackstore(3, $t3)
+	stackstore(4, $t4)
+	stackstore(5, $t5)
+		# load vars into memory
+		la $t0, frameBuffer
+		readArray($a0, 0)
+		move $t1, $v0
+		readArray($a0, 1)
+		move $t2, $v0
+		readArray($a0, 2)
+		move $t3, $v0
+		readArray($a0, 3)
+		move $t4, $v0
+		readArray($a0, 4)
+		move $t5, $v0
+		#check if should draw nothing
+		beqz $t3, return_bm_drawRectangle 
+		beqz $t4, return_bm_drawRectangle
+		############
+		#Find starting addresses
+		
+		
+	return_bm_drawRectangle: 	
+	stackload(0, $t0)
+	stackload(1, $t1)
+	stackload(2, $t2)
+	stackload(3, $t3)
+	stackload(4, $t4)
+	stackload(5, $t5)
+	stackpop
+	freturn
