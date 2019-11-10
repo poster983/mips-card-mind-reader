@@ -135,6 +135,8 @@
 # ============================================
 # DATA
 .data
+.align 2
+frameBuffer: .space 0x80000 # space for a 512x256 image in the 0x10010000 data range
 magnitude: .word 6
 # ============================================
 # PROGRAM
@@ -300,14 +302,13 @@ print_card: # a0 is mask, a1 is max
 	setArrayI($v0, 2, %width)
 	setArrayI($v0, 3, %height)
 	setArrayI($v0, 4, %colorCode)
+	move $a0, $v0
 	jal bm_drawRectangle
 .end_macro
 
 #===================
 #DATA Constants
 .data
-frameBuffer:
-.space 0x80000 # space for a 512x256 image in the 0x10010000 data range
 macroDrawRectangleArray: .word 0 # array address for the macro that fills the array to be passed to bm_drawRectangle
 
 #===================
@@ -345,8 +346,8 @@ bm_buildBackground:
 ################
 	fstart
 		
-		bm_drawRectangle(0,0,512,256,0xadd8e6)
-		
+		bm_drawRectangle(0,0,512,256,0xadd8e6) # Blue sky
+		bm_drawRectangle(25,25,412,156,0x654321) # brown sign
 	freturn
 
 bm_drawRectangle:
@@ -355,17 +356,21 @@ bm_drawRectangle:
 # Temps:
 # $t0 - our frame buffer
 # $t1 through $t5 - Our params as temps
+# $t6 - starting / ending address of rectangle in bitmap 
 # Paramater: 
 # $a0 - address of array that has the following params: [leftX, topY, width, height, colorCode]
 #################
 	fstart
-	stackgrow(24)
+	stackgrow(36)
 	stackstore(0, $t0)
-	stackstore(1, $t1)
-	stackstore(2, $t2)
-	stackstore(3, $t3)
-	stackstore(4, $t4)
-	stackstore(5, $t5)
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $t3)
+	stackstore(16, $t4)
+	stackstore(20, $t5)
+	stackstore(24, $t6)
+	stackstore(28, $t7)
+	stackstore(32, $t8)
 		# load vars into memory
 		la $t0, frameBuffer
 		readArray($a0, 0)
@@ -383,14 +388,45 @@ bm_drawRectangle:
 		beqz $t4, return_bm_drawRectangle
 		############
 		#Find starting addresses
+		add $t3, $t3, $t1 # find right side of rectangle
+		add $t4, $t4, $t2 # bottom limit of rectangle
 		
+		sll $t1, $t1, 2 # convert x values to bytes 
+		sll $t3, $t3, 2
+
+		sll $t2,$t2,11 # scale y values to bytes we must multiply it by 512 (width) to get the row
+		sll $t4,$t4,11
+		
+		addu $t6,$t2,$t0 # ending address for the width (add the y value to the starting address of the bitmap
+		addu $t4,$t4,$t0 # ending address for height
+
+		addu $t2,$t6,$t1 # collumn vals starting address 
+		addu $t4,$t4,$t1
+
+		addu $t6,$t6,$t3 # final ending address for the row
+		li $t7,0x800 # bytes per row
+
+		bm_drawRectangleYloop:
+			move $t8,$t2 # current pixel in X loop
+
+			bm_drawRectangleXloop:
+				sw $t5,($t8) # put color into bitmap!!! (finally)
+				addiu $t8,$t8,4 # move pointer one word
+			bne $t8,$t6,bm_drawRectangleXloop # loop until we hit the edge
+
+			addu $t2,$t2,$t7 # go down a row
+			addu $t6,$t6,$t7 
+		bne $t2,$t4,bm_drawRectangleYloop # keep going if not off the bottom of the rectangle
 		
 	return_bm_drawRectangle: 	
 	stackload(0, $t0)
-	stackload(1, $t1)
-	stackload(2, $t2)
-	stackload(3, $t3)
-	stackload(4, $t4)
-	stackload(5, $t5)
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $t3)
+	stackload(16, $t4)
+	stackload(20, $t5)
+	stackload(24, $t6)
+	stackload(28, $t7)
+	stackload(32, $t8)
 	stackpop
 	freturn
