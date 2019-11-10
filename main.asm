@@ -40,8 +40,8 @@
 #	Grow stack by number of bytes
 .macro stackgrow (%bytes)
 	subi	$sp, $sp, %bytes
-	ori	$t9, $0, %bytes
-	sw	$t9, -4($sp)
+	ori	$at, $0, %bytes
+	sw	$at, -4($sp)
 .end_macro
 
 #	Set stack value to register
@@ -56,8 +56,8 @@
 
 #	Pop stack based on stored width
 .macro stackpop
-	lw	$t9, -4($sp)
-	add	$sp, $sp, $t9
+	lw	$at, -4($sp)
+	add	$sp, $sp, $at
 .end_macro
 
 #	Function Start (store $ra)
@@ -93,6 +93,34 @@
 	li	$v0,10
 	syscall
 .end_macro
+
+#	Creates an array of words with n elements. first index contains the length
+#	$v0 contains address
+.macro newArray(%n)
+	li $at, %n
+	addi $a0, $at, 1 #add one space for storing length
+	sll $a0, $a0, 2 # get number of bytes 
+	li  $v0 9
+        syscall # address of array is in $v0
+        sw $at, ($v0) #store length in first index
+.end_macro
+#	Sets the %register to the index in the array
+.macro setArray(%array, %index, %register)
+	li $at, %index
+	addi $at, $at, 1 #adding one to line it up and not include length
+	sll $at, $at, 2 # get bytes to shift
+	addu $at, %array, $at
+	sw %register, ($at)	
+.end_macro
+#	returns value at index from an array address
+#	$v0 contains the word
+.macro readArray(%array, %index)
+	li $at, %index
+	addi $at, $at, 1 #adding one to line it up and not include length
+	sll $at, $at, 2 # get bytes to shift
+	addu $at, %array, $at
+	lw $v0, ($at)	
+.end_macro
 # ============================================
 # DATA
 .data
@@ -102,6 +130,9 @@ magnitude: .word 6
 .text
 .globl main
 main:
+	# Setup Bitmap
+	jal bm_setup
+	
 #	Set 
 	setseed(0)
 	
@@ -242,3 +273,67 @@ print_card: # a0 is mask, a1 is max
 	stackpop
 	freturn
 	
+	
+###############
+#Bitmap Display Part
+#Joseph Hassell
+# Possible TODO: Move to own file
+###############
+
+#===================
+#Bitmap macros
+
+
+#===================
+#DATA Constants
+.data
+frameBuffer:
+.space 0x80000 # space for a 512x256 image in the 0x10010000 data range
+
+#===================
+# Functions
+.text
+
+bm_setup: 
+########################
+# First time setup for the display. Also prints instructions to see bitmap in console
+########################
+	fstart
+	
+	print_str("###########################################################\n")
+	print_str("#                MARS Bitmap Display Setup                #\n")
+	print_str("# This program makes use of the MARS bitmap display tool! #\n")
+	print_str("# To enable the display please follow these instructions. #\n")
+	print_str("# 1. Go to \"Tools\" > \"Bitmap Display\"                     #\n")
+	print_str("# 2. Ensure the following settings match your tool        #\n")
+	print_str("#    The first 2 options are \"1\"                          #\n")
+	print_str("#    Width is 512                                         #\n")
+	print_str("#    Height is 256                                        #\n")
+	print_str("#    Base address is set to 0x10010000                    #\n")
+	print_str("# 3. Click on \"Connect to MIPS\"                           #\n")
+	print_str("# The cards will still be printed in the console          #\n")
+	print_str("###########################################################\n")
+	
+	jal bm_buildBackground #go build the background
+	freturn
+bm_buildBackground:
+################
+# This function Builds the base of the bitmap image
+################
+	fstart
+	stackgrow(4)
+	stackstore(0, $t0)
+	
+		newArray(5)
+		li $t0, 3
+		setArray($v0, 3, $t0)
+		
+	stackload(0, $t0)
+	stackpop
+	freturn
+
+bm_drawRectangle:
+#################
+# This function draws a rectangle with a solid color
+# $a0 - address of array that has the following params: [leftX, topY, width, height, colorCode]
+#################
