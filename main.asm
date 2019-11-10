@@ -295,12 +295,23 @@ print_card: # a0 is mask, a1 is max
 
 #===================
 #Bitmap macros
-.macro bm_drawRectangle(%leftX, %topY, %width, %height, %colorCode)
+.macro bm_drawRectangleI(%leftX, %topY, %width, %height, %colorCode)
 	lw $v0, macroDrawRectangleArray
 	setArrayI($v0, 0, %leftX)
 	setArrayI($v0, 1, %topY)
 	setArrayI($v0, 2, %width)
 	setArrayI($v0, 3, %height)
+	setArrayI($v0, 4, %colorCode)
+	move $a0, $v0
+	jal bm_drawRectangle
+.end_macro
+
+.macro bm_drawRectangle(%leftX, %topY, %width, %height, %colorCode)
+	lw $v0, macroDrawRectangleArray
+	setArray($v0, 0, %leftX)
+	setArray($v0, 1, %topY)
+	setArray($v0, 2, %width)
+	setArray($v0, 3, %height)
 	setArrayI($v0, 4, %colorCode)
 	move $a0, $v0
 	jal bm_drawRectangle
@@ -346,8 +357,14 @@ bm_buildBackground:
 ################
 	fstart
 		
-		bm_drawRectangle(0,0,512,256,0xadd8e6) # Blue sky
-		bm_drawRectangle(25,25,412,156,0x654321) # brown sign
+		bm_drawRectangleI(0,0,512,256,0xadd8e6) # Blue sky
+		bm_drawRectangleI(25,25,462,206,0x654321) # brown sign
+		#border
+		bm_drawRectangleI(0,0,512,5,0xff0000) #top
+		bm_drawRectangleI(0,0,5,256,0xff0000) # left
+		bm_drawRectangleI(507,0,5,256,0xff0000) #right
+		bm_drawRectangleI(0,251,512,5,0xff0000) #bottom
+		#jal bm_drawNumber1
 	freturn
 
 bm_drawRectangle:
@@ -429,4 +446,17 @@ bm_drawRectangle:
 	stackload(28, $t7)
 	stackload(32, $t8)
 	stackpop
+	freturn
+	
+bm_drawNumber1:
+#############
+# This function prints out 1 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+		srl $a2, $a2, 1
+		#bm_drawRectangle($a0,$a1,512,256,0xffffff)
 	freturn
