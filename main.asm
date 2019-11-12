@@ -307,14 +307,22 @@ print_card: # a0 is mask, a1 is max
 .end_macro
 
 .macro bm_drawRectangle(%leftX, %topY, %width, %height, %colorCode)
-	lw $v0, macroDrawRectangleArray
-	setArray($v0, 0, %leftX)
-	setArray($v0, 1, %topY)
-	setArray($v0, 2, %width)
-	setArray($v0, 3, %height)
-	setArrayI($v0, 4, %colorCode)
-	move $a0, $v0
-	jal bm_drawRectangle
+	#stackgrow(8)
+	#stackstore(0, $v0)
+	#stackstore(4, $a0)
+		lw $v0, macroDrawRectangleArray
+		setArray($v0, 0, %leftX)
+		setArray($v0, 1, %topY)
+		setArray($v0, 2, %width)
+		setArray($v0, 3, %height)
+		setArrayI($v0, 4, %colorCode)
+		move $a0, $v0
+		jal bm_drawRectangle
+	
+	#stackload(0, $v0)
+	#stackload(4, $a0)
+	#stackpop
+	
 .end_macro
 
 #===================
@@ -360,11 +368,20 @@ bm_buildBackground:
 		bm_drawRectangleI(0,0,512,256,0xadd8e6) # Blue sky
 		bm_drawRectangleI(25,25,462,206,0x654321) # brown sign
 		#border
-		bm_drawRectangleI(0,0,512,5,0xff0000) #top
-		bm_drawRectangleI(0,0,5,256,0xff0000) # left
-		bm_drawRectangleI(507,0,5,256,0xff0000) #right
-		bm_drawRectangleI(0,251,512,5,0xff0000) #bottom
-		#jal bm_drawNumber1
+		bm_drawRectangleI(0,0,512,5,0x000000) #top
+		bm_drawRectangleI(0,0,5,256,0x000000) # left
+		bm_drawRectangleI(507,0,5,256,0x000000) #right
+		bm_drawRectangleI(0,251,512,5,0x000000) #bottom
+		
+		
+		li $a0, 10
+		li $a1, 10
+		li $a2, 10
+		jal bm_drawChar0
+		li $a0, 20
+		li $a1, 20
+		li $a2, 10
+		#jal bm_drawChar2
 	freturn
 
 bm_drawRectangle:
@@ -448,7 +465,44 @@ bm_drawRectangle:
 	stackpop
 	freturn
 	
-bm_drawNumber1:
+	
+	
+bm_drawChar0:
+#############
+# This function prints out 0 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+	stackgrow(20)
+	stackstore(0, $t0)
+	stackstore(4, $t1)
+	stackstore(8, $s0)
+	stackstore(12, $s1)
+	stackstore(16, $s2)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+		
+		srl $t0, $s2, 2 #divide by 4 
+		bm_drawRectangle($s0,$s1,$s2,$t0,0xffffff) # A
+		
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		bm_drawRectangle($t1,$s1,$s2,$t0,0xffffff) # A
+		
+	stackload(0, $t0)
+	stackload(4, $t1)
+	stackload(8, $s0)
+	stackload(12, $s1)
+	stackload(16, $s2)
+	stackpop
+	freturn
+	
+
+bm_drawChar1:
 #############
 # This function prints out 1 on the bitmap display 
 # vars:
@@ -457,6 +511,28 @@ bm_drawNumber1:
 # $a2 - size
 #############
 	fstart
-		srl $a2, $a2, 1
-		#bm_drawRectangle($a0,$a1,512,256,0xffffff)
+	stackgrow(4)
+	stackstore(0, $t0)
+		srl $t0, $a2, 2 #divide by 4
+		add $a0, $a0, $t0
+		bm_drawRectangle($a0,$a1,$t0,$a2,0xffffff) # b &c
+	stackload(0, $t0)
+	stackpop
+	freturn
+
+bm_drawChar2:
+#############
+# This function prints out 2 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+	stackgrow(4)
+	stackstore(0, $t0)
+		srl $t0, $a2, 2 #divide by 4
+		bm_drawRectangle($a0,$a1,$a2,$t0,0xffffff) # b &c
+	stackload(0, $t0)
+	stackpop
 	freturn
