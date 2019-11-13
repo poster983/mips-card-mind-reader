@@ -40,8 +40,8 @@
 #	Grow stack by number of bytes
 .macro stackgrow (%bytes)
 	subi	$sp, $sp, %bytes
-	ori	$at, $0, %bytes
-	sw	$at, -4($sp)
+	#ori	$at, $0, %bytes
+	#sw	$at, -4($sp)
 .end_macro
 
 #	Set stack value to register
@@ -55,9 +55,9 @@
 .end_macro
 
 #	Pop stack based on stored width
-.macro stackpop
-	lw	$at, -4($sp)
-	add	$sp, $sp, $at
+.macro stackpop(%bytes)
+	#lw	$at, -4($sp)
+	addi	$sp, $sp, %bytes
 .end_macro
 
 #	Function Start (store $ra)
@@ -283,7 +283,7 @@ print_card: # a0 is mask, a1 is max
 	stackload(4, $s4)
 	stackload(8, $s5)
 	stackload(12, $s6)
-	stackpop
+	stackpop(16)
 	freturn
 	
 	
@@ -374,14 +374,18 @@ bm_buildBackground:
 		bm_drawRectangleI(0,251,512,5,0x000000) #bottom
 		
 		
-		li $a0, 10
-		li $a1, 10
-		li $a2, 10
+		li $a0, 150
+		li $a1, 30
+		li $a2, 30
 		jal bm_drawChar0
-		li $a0, 20
-		li $a1, 20
-		li $a2, 10
-		#jal bm_drawChar2
+		li $a0, 40
+		li $a1, 10
+		li $a2, 30
+		jal bm_drawChar1
+		li $a0, 80
+		li $a1, 10
+		li $a2, 30
+		jal bm_drawChar2
 	freturn
 
 bm_drawRectangle:
@@ -462,7 +466,7 @@ bm_drawRectangle:
 	stackload(24, $t6)
 	stackload(28, $t7)
 	stackload(32, $t8)
-	stackpop
+	stackpop(36)
 	freturn
 	
 	
@@ -476,29 +480,47 @@ bm_drawChar0:
 # $a2 - size
 #############
 	fstart
-	stackgrow(20)
+	stackgrow(28)
 	stackstore(0, $t0)
 	stackstore(4, $t1)
-	stackstore(8, $s0)
-	stackstore(12, $s1)
-	stackstore(16, $s2)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	stackstore(24, $t3)
 	move $s0, $a0
 	move $s1, $a1
 	move $s2, $a2
 	
 		
 		srl $t0, $s2, 2 #divide by 4 
+		
 		bm_drawRectangle($s0,$s1,$s2,$t0,0xffffff) # A
 		
 		add $t1, $s2, $s0 # find x value fror right hand lines
-		bm_drawRectangle($t1,$s1,$s2,$t0,0xffffff) # A
+		sub $t1, $t1, $t0
+		bm_drawRectangle($t1,$s1,$t0,$s2,0xffffff) # B
+		
+		add $t2, $s1, $s2 # find y value for C and E
+		bm_drawRectangle($t1,$t2,$t0,$s2,0xffffff) # C
+		
+		add $t3, $s2, $s1# find relative y start value for D
+		add $t3, $s2, $t3
+		sub $t3, $t3, $t0
+		bm_drawRectangle($s0,$t3,$s2,$t0,0xffffff) # D
+		
+		bm_drawRectangle($s0,$t2,$t0,$s2,0xffffff) # E
+		
+		bm_drawRectangle($s0,$s1,$t0,$s2,0xffffff) # F
 		
 	stackload(0, $t0)
 	stackload(4, $t1)
-	stackload(8, $s0)
-	stackload(12, $s1)
-	stackload(16, $s2)
-	stackpop
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackload(24, $t3)
+	stackpop(28)
 	freturn
 	
 
@@ -511,13 +533,31 @@ bm_drawChar1:
 # $a2 - size
 #############
 	fstart
-	stackgrow(4)
+	stackgrow(24)
 	stackstore(0, $t0)
-		srl $t0, $a2, 2 #divide by 4
-		add $a0, $a0, $t0
-		bm_drawRectangle($a0,$a1,$t0,$a2,0xffffff) # b &c
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+		srl $t0, $s2, 2 #divide by 4 
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		sub $t1, $t1, $t0
+		bm_drawRectangle($t1,$s1,$t0,$s2,0xffffff) # B
+		
+		add $t2, $s1, $s2 # find y value for C and E
+		bm_drawRectangle($t1,$t2,$t0,$s2,0xffffff) # C
+		
 	stackload(0, $t0)
-	stackpop
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackpop(24)
 	freturn
 
 bm_drawChar2:
@@ -529,10 +569,41 @@ bm_drawChar2:
 # $a2 - size
 #############
 	fstart
-	stackgrow(4)
+	stackgrow(28)
 	stackstore(0, $t0)
-		srl $t0, $a2, 2 #divide by 4
-		bm_drawRectangle($a0,$a1,$a2,$t0,0xffffff) # b &c
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	stackstore(24, $t3)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+		srl $t0, $s2, 2 #divide by 4 
+		bm_drawRectangle($s0,$s1,$s2,$t0,0xffffff) # A
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		sub $t1, $t1, $t0
+		bm_drawRectangle($t1,$s1,$t0,$s2,0xffffff) # B
+		
+		add $t3, $s2, $s1# find relative y start value for D
+		add $t3, $s2, $t3
+		sub $t3, $t3, $t0
+		bm_drawRectangle($s0,$t3,$s2,$t0,0xffffff) # D
+		
+		add $t2, $s1, $s2 # find y value for C and E and F
+		bm_drawRectangle($s0,$t2,$t0,$s2,0xffffff) # E
+		
+		
+		bm_drawRectangle($s0,$t2,$s2,$t0,0xffffff) # f
+		
+		
 	stackload(0, $t0)
-	stackpop
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackload(24, $t3)
+	stackpop(28)
 	freturn
