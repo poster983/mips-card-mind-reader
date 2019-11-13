@@ -132,6 +132,8 @@
 #	lw $at, ($at)
 	
 #.end_macro
+
+.macro 
 # ============================================
 # DATA
 .data
@@ -374,18 +376,54 @@ bm_buildBackground:
 		bm_drawRectangleI(0,251,512,5,0x000000) #bottom
 		
 		
-		li $a0, 150
+		li $a0, 10
 		li $a1, 30
 		li $a2, 30
 		jal bm_drawChar0
-		li $a0, 40
-		li $a1, 10
+		li $a0, 60
+		li $a1, 30
 		li $a2, 30
 		jal bm_drawChar1
-		li $a0, 80
-		li $a1, 10
+		li $a0, 110
+		li $a1, 15
 		li $a2, 30
 		jal bm_drawChar2
+		
+		li $a0, 150
+		li $a1, 35
+		li $a2, 40
+		jal bm_drawChar3
+		
+		li $a0, 210
+		li $a1, 65
+		li $a2, 40
+		jal bm_drawChar4
+		
+		li $a0, 250
+		li $a1, 15
+		li $a2, 35
+		jal bm_drawChar5
+		
+		li $a0, 310
+		li $a1, 25
+		li $a2, 7
+		jal bm_drawChar6
+		
+		li $a0, 330
+		li $a1, 40
+		li $a2, 20
+		jal bm_drawChar7
+		
+		li $a0, 360
+		li $a1, 40
+		li $a2, 20
+		jal bm_drawChar8
+		
+		li $a0, 390
+		li $a1, 45
+		li $a2, 36
+		jal bm_drawChar9
+		
 	freturn
 
 bm_drawRectangle:
@@ -469,9 +507,26 @@ bm_drawRectangle:
 	stackpop(36)
 	freturn
 	
+bm_drawNumber:
+#############
+# This function prints out any char that matches the char code 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+# #a3 - the number
+#############
+	fstart
+	stackgrow(4)
+	stackstore(0, $t0)
 	
+		
+		
+	stackload(0, $t0)
+	stackpop(4)
+	freturn
 	
-bm_drawChar0:
+bm_drawDigit0:
 #############
 # This function prints out 0 on the bitmap display 
 # vars:
@@ -524,7 +579,7 @@ bm_drawChar0:
 	freturn
 	
 
-bm_drawChar1:
+bm_drawDigit1:
 #############
 # This function prints out 1 on the bitmap display 
 # vars:
@@ -560,7 +615,7 @@ bm_drawChar1:
 	stackpop(24)
 	freturn
 
-bm_drawChar2:
+bm_drawDigit2:
 #############
 # This function prints out 2 on the bitmap display 
 # vars:
@@ -591,11 +646,11 @@ bm_drawChar2:
 		sub $t3, $t3, $t0
 		bm_drawRectangle($s0,$t3,$s2,$t0,0xffffff) # D
 		
-		add $t2, $s1, $s2 # find y value for C and E and F
+		add $t2, $s1, $s2 # find y value for C and E and G
 		bm_drawRectangle($s0,$t2,$t0,$s2,0xffffff) # E
 		
 		
-		bm_drawRectangle($s0,$t2,$s2,$t0,0xffffff) # f
+		bm_drawRectangle($s0,$t2,$s2,$t0,0xffffff) # G
 		
 		
 	stackload(0, $t0)
@@ -606,4 +661,332 @@ bm_drawChar2:
 	stackload(20, $s2)
 	stackload(24, $t3)
 	stackpop(28)
+	freturn
+
+bm_drawDigit3:
+#############
+# This function prints out 3 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+	stackgrow(28)
+	stackstore(0, $t0)
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	stackstore(24, $t3)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+		srl $t0, $s2, 2 #divide by 4 
+		bm_drawRectangle($s0,$s1,$s2,$t0,0xffffff) # A
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		sub $t1, $t1, $t0
+		bm_drawRectangle($t1,$s1,$t0,$s2,0xffffff) # B
+		
+		add $t2, $s1, $s2 # find y value for C and E
+		bm_drawRectangle($t1,$t2,$t0,$s2,0xffffff) # C
+		
+		add $t3, $s2, $s1# find relative y start value for D
+		add $t3, $s2, $t3
+		sub $t3, $t3, $t0
+		bm_drawRectangle($s0,$t3,$s2,$t0,0xffffff) # D
+		
+		add $t2, $s1, $s2 # find y value for C and E and F
+		
+		bm_drawRectangle($s0,$t2,$s2,$t0,0xffffff) # G
+		
+		
+	stackload(0, $t0)
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackload(24, $t3)
+	stackpop(28)
+	freturn
+	
+bm_drawDigit4:
+#############
+# This function prints out 4 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+	stackgrow(24)
+	stackstore(0, $t0)
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+		srl $t0, $s2, 2 #divide by 4 
+
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		sub $t1, $t1, $t0
+		bm_drawRectangle($t1,$s1,$t0,$s2,0xffffff) # B
+		
+		add $t2, $s1, $s2 # find y value for C and E
+		bm_drawRectangle($t1,$t2,$t0,$s2,0xffffff) # C
+		
+		
+		add $t2, $s1, $s2 # find y value for C and E and F
+		
+		bm_drawRectangle($s0,$s1,$t0,$s2,0xffffff) # F
+		
+		bm_drawRectangle($s0,$t2,$s2,$t0,0xffffff) # G
+		
+		
+	stackload(0, $t0)
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackpop(24)
+	freturn
+	
+bm_drawDigit5:
+#############
+# This function prints out 5 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+	stackgrow(28)
+	stackstore(0, $t0)
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	stackstore(24, $t3)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+		srl $t0, $s2, 2 #divide by 4 
+		bm_drawRectangle($s0,$s1,$s2,$t0,0xffffff) # A
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		sub $t1, $t1, $t0
+		
+		add $t2, $s1, $s2 # find y value for C and E
+		bm_drawRectangle($t1,$t2,$t0,$s2,0xffffff) # C
+		
+		add $t3, $s2, $s1# find relative y start value for D
+		add $t3, $s2, $t3
+		sub $t3, $t3, $t0
+		bm_drawRectangle($s0,$t3,$s2,$t0,0xffffff) # D
+		
+		add $t2, $s1, $s2 # find y value for C and E and F
+		
+		bm_drawRectangle($s0,$s1,$t0,$s2,0xffffff) # F
+		bm_drawRectangle($s0,$t2,$s2,$t0,0xffffff) # G
+		
+		
+	stackload(0, $t0)
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackload(24, $t3)
+	stackpop(28)
+	freturn
+	
+bm_drawDigit6:
+#############
+# This function prints out 6 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+	stackgrow(28)
+	stackstore(0, $t0)
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	stackstore(24, $t3)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+		srl $t0, $s2, 2 #divide by 4 
+		bm_drawRectangle($s0,$s1,$s2,$t0,0xffffff) # A
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		sub $t1, $t1, $t0
+		
+		add $t2, $s1, $s2 # find y value for C and E
+		bm_drawRectangle($t1,$t2,$t0,$s2,0xffffff) # C
+		
+		add $t3, $s2, $s1# find relative y start value for D
+		add $t3, $s2, $t3
+		sub $t3, $t3, $t0
+		bm_drawRectangle($s0,$t3,$s2,$t0,0xffffff) # D
+		
+		add $t2, $s1, $s2 # find y value for C and E and F
+		
+		bm_drawRectangle($s0,$t2,$t0,$s2,0xffffff) # E
+		bm_drawRectangle($s0,$s1,$t0,$s2,0xffffff) # F
+		bm_drawRectangle($s0,$t2,$s2,$t0,0xffffff) # G
+		
+		
+	stackload(0, $t0)
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackload(24, $t3)
+	stackpop(28)
+	freturn
+	
+bm_drawDigit7:
+#############
+# This function prints out 7 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+	stackgrow(24)
+	stackstore(0, $t0)
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+		srl $t0, $s2, 2 #divide by 4 
+		bm_drawRectangle($s0,$s1,$s2,$t0,0xffffff) # A
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		sub $t1, $t1, $t0
+		bm_drawRectangle($t1,$s1,$t0,$s2,0xffffff) # B
+		
+		add $t2, $s1, $s2 # find y value for C and E
+		bm_drawRectangle($t1,$t2,$t0,$s2,0xffffff) # C
+		
+		
+	stackload(0, $t0)
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackpop(24)
+	freturn
+	
+bm_drawDigit8:
+#############
+# This function prints out 8 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+	stackgrow(28)
+	stackstore(0, $t0)
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	stackstore(24, $t3)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+		
+		srl $t0, $s2, 2 #divide by 4 
+		
+		bm_drawRectangle($s0,$s1,$s2,$t0,0xffffff) # A
+		
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		sub $t1, $t1, $t0
+		bm_drawRectangle($t1,$s1,$t0,$s2,0xffffff) # B
+		
+		add $t2, $s1, $s2 # find y value for C and E
+		bm_drawRectangle($t1,$t2,$t0,$s2,0xffffff) # C
+		
+		add $t3, $s2, $s1# find relative y start value for D
+		add $t3, $s2, $t3
+		sub $t3, $t3, $t0
+		bm_drawRectangle($s0,$t3,$s2,$t0,0xffffff) # D
+		
+		bm_drawRectangle($s0,$t2,$t0,$s2,0xffffff) # E
+		bm_drawRectangle($s0,$s1,$t0,$s2,0xffffff) # F
+		bm_drawRectangle($s0,$t2,$s2,$t0,0xffffff) # G
+		
+	stackload(0, $t0)
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackload(24, $t3)
+	stackpop(28)
+	freturn
+	
+bm_drawDigit9:
+#############
+# This function prints out 9 on the bitmap display 
+# vars:
+# $a0 - x
+# $a1 - y
+# $a2 - size
+#############
+	fstart
+	stackgrow(24)
+	stackstore(0, $t0)
+	stackstore(4, $t1)
+	stackstore(8, $t2)
+	stackstore(12, $s0)
+	stackstore(16, $s1)
+	stackstore(20, $s2)
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+		
+		srl $t0, $s2, 2 #divide by 4 
+		
+		bm_drawRectangle($s0,$s1,$s2,$t0,0xffffff) # A
+		
+		add $t1, $s2, $s0 # find x value fror right hand lines
+		sub $t1, $t1, $t0
+		bm_drawRectangle($t1,$s1,$t0,$s2,0xffffff) # B
+		
+		add $t2, $s1, $s2 # find y value for C and E
+		bm_drawRectangle($t1,$t2,$t0,$s2,0xffffff) # C
+		
+		
+		bm_drawRectangle($s0,$s1,$t0,$s2,0xffffff) # F
+		bm_drawRectangle($s0,$t2,$s2,$t0,0xffffff) # G
+		
+	stackload(0, $t0)
+	stackload(4, $t1)
+	stackload(8, $t2)
+	stackload(12, $s0)
+	stackload(16, $s1)
+	stackload(20, $s2)
+	stackpop(24)
 	freturn
