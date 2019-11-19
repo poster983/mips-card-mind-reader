@@ -133,7 +133,6 @@
 	
 #.end_macro
 
-.macro 
 # ============================================
 # DATA
 .data
@@ -239,15 +238,26 @@ input_boolean:
 print_card: # a0 is mask, a1 is max
 	fstart
 	# move stored values to stack
-	stackgrow(16)
+	stackgrow(20)
 	stackstore(0, $s2)
 	stackstore(4, $s4)
 	stackstore(8, $s5)
 	stackstore(12, $s6)
+	stackstore(16, $s7)
 	# move input to stored
 	move	$s2, $a0
 	move	$s4, $a1
 	
+	##bm: Reset Screen 
+	jal bm_buildBackground
+	
+	##BM: Print card number
+	
+	li $a0, 241
+	li $a1, 35
+	li $a2, 15
+	move $a3, $s2
+	jal bm_drawDigit
 	# print card label
 	print_str("\nCard: ")
 	print_int($s2)
@@ -285,7 +295,8 @@ print_card: # a0 is mask, a1 is max
 	stackload(4, $s4)
 	stackload(8, $s5)
 	stackload(12, $s6)
-	stackpop(16)
+	stackload(16, $s7)
+	stackpop(20)
 	freturn
 	
 	
@@ -359,7 +370,7 @@ bm_setup:
 		newArray(5) # make array for drawRetangle
 		sw $v0, macroDrawRectangleArray
 	
-		jal bm_buildBackground #go build the background
+		#jal bm_buildBackground #go build the background
 	freturn
 bm_buildBackground:
 ################
@@ -375,54 +386,6 @@ bm_buildBackground:
 		bm_drawRectangleI(507,0,5,256,0x000000) #right
 		bm_drawRectangleI(0,251,512,5,0x000000) #bottom
 		
-		
-		li $a0, 10
-		li $a1, 30
-		li $a2, 30
-		jal bm_drawChar0
-		li $a0, 60
-		li $a1, 30
-		li $a2, 30
-		jal bm_drawChar1
-		li $a0, 110
-		li $a1, 15
-		li $a2, 30
-		jal bm_drawChar2
-		
-		li $a0, 150
-		li $a1, 35
-		li $a2, 40
-		jal bm_drawChar3
-		
-		li $a0, 210
-		li $a1, 65
-		li $a2, 40
-		jal bm_drawChar4
-		
-		li $a0, 250
-		li $a1, 15
-		li $a2, 35
-		jal bm_drawChar5
-		
-		li $a0, 310
-		li $a1, 25
-		li $a2, 7
-		jal bm_drawChar6
-		
-		li $a0, 330
-		li $a1, 40
-		li $a2, 20
-		jal bm_drawChar7
-		
-		li $a0, 360
-		li $a1, 40
-		li $a2, 20
-		jal bm_drawChar8
-		
-		li $a0, 390
-		li $a1, 45
-		li $a2, 36
-		jal bm_drawChar9
 		
 	freturn
 
@@ -459,6 +422,8 @@ bm_drawRectangle:
 		move $t4, $v0
 		readArray($a0, 4)
 		move $t5, $v0
+		
+		#got help on this function from stack overflow
 		#check if should draw nothing
 		beqz $t3, return_bm_drawRectangle 
 		beqz $t4, return_bm_drawRectangle
@@ -507,7 +472,12 @@ bm_drawRectangle:
 	stackpop(36)
 	freturn
 	
-bm_drawNumber:
+bm_drawNumberGrid:
+#############
+# THis function Draws boxes around the places where the numbers will go
+
+#############
+bm_drawDigit:
 #############
 # This function prints out any char that matches the char code 
 # vars:
@@ -517,13 +487,55 @@ bm_drawNumber:
 # #a3 - the number
 #############
 	fstart
-	stackgrow(4)
-	stackstore(0, $t0)
-	
+		bne $a3, 1, bm_drawNumber_next1
+			jal bm_drawDigit1 # draw 1
+		j bm_drawNumber_return
+		bm_drawNumber_next1:
+		
+		bne $a3, 2, bm_drawNumber_next2
+			jal bm_drawDigit2 # draw 2
+		j bm_drawNumber_return
+		bm_drawNumber_next2:
+		
+		bne $a3, 3, bm_drawNumber_next3
+			jal bm_drawDigit3 # draw 3
+		j bm_drawNumber_return
+		bm_drawNumber_next3:
+		
+		bne $a3, 4, bm_drawNumber_next4
+			jal bm_drawDigit4 # draw 4
+		j bm_drawNumber_return
+		bm_drawNumber_next4:
+		
+		bne $a3, 5, bm_drawNumber_next5
+			jal bm_drawDigit5 # draw 5
+		j bm_drawNumber_return
+		bm_drawNumber_next5:
+		
+		bne $a3, 6, bm_drawNumber_next6
+			jal bm_drawDigit7 # draw 6
+		j bm_drawNumber_return
+		bm_drawNumber_next6:
+		
+		bne $a3, 7, bm_drawNumber_next7
+			jal bm_drawDigit7 # draw 7
+		j bm_drawNumber_return
+		bm_drawNumber_next7:
+		
+		bne $a3, 8, bm_drawNumber_next8
+			jal bm_drawDigit8 # draw 8
+		j bm_drawNumber_return
+		bm_drawNumber_next8:
+		
+		bne $a3, 9, bm_drawNumber_next9
+			jal bm_drawDigit9 # draw 9
+		j bm_drawNumber_return
+		bm_drawNumber_next9:
+		
+		jal bm_drawDigit0 # base case draw 0
 		
 		
-	stackload(0, $t0)
-	stackpop(4)
+	bm_drawNumber_return:
 	freturn
 	
 bm_drawDigit0:
