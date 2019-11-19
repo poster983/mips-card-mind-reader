@@ -238,12 +238,13 @@ input_boolean:
 print_card: # a0 is mask, a1 is max
 	fstart
 	# move stored values to stack
-	stackgrow(20)
+	stackgrow(24)
 	stackstore(0, $s2)
 	stackstore(4, $s4)
 	stackstore(8, $s5)
 	stackstore(12, $s6)
 	stackstore(16, $s7)
+	stackstore(20, $s1)
 	# move input to stored
 	move	$s2, $a0
 	move	$s4, $a1
@@ -251,12 +252,16 @@ print_card: # a0 is mask, a1 is max
 	##bm: Reset Screen 
 	jal bm_buildBackground
 	
+	##find real card number
+	move $a0, $s2
+	jal log2
+	move $s1, $v0
 	##BM: Print card number
 	
 	li $a0, 241
 	li $a1, 35
 	li $a2, 15
-	move $a3, $s2
+	move $a3, $s1
 	jal bm_drawDigit
 	# print card label
 	print_str("\nCard: ")
@@ -296,10 +301,34 @@ print_card: # a0 is mask, a1 is max
 	stackload(8, $s5)
 	stackload(12, $s6)
 	stackload(16, $s7)
-	stackpop(20)
+	stackload(20, $s1)
+	stackpop(24)
 	freturn
 	
-	
+log2:
+###########
+# Finds the log 2 of a number
+#I/O:
+# $a0 - number (n)
+# $v0 - rooted number (x)
+###########
+	fstart
+		# set up vars
+		li $v0, -1
+		
+		log2_loop:
+			bnez $a0, log2_loop_exit
+			addi $v0, $v0, 1
+			srl $a0, $a0, 1
+			
+			
+				j log2_loop
+			
+		log2_loop_exit:
+		
+		
+	freturn 
+
 ###############
 #Bitmap Display Part
 #Joseph Hassell
@@ -362,7 +391,7 @@ bm_setup:
 		print_str("#    The first 2 options are \"1\"                          #\n")
 		print_str("#    Width is 512                                         #\n")
 		print_str("#    Height is 256                                        #\n")
-			print_str("#    Base address is set to 0x10010000                    #\n")
+		print_str("#    Base address is set to 0x10010000                    #\n")
 		print_str("# 3. Click on \"Connect to MIPS\"                           #\n")
 		print_str("# The cards will still be printed in the console          #\n")
 		print_str("###########################################################\n")
