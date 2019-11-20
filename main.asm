@@ -126,12 +126,44 @@
 	addu $at, %array, $at
 	lw $v0, ($at)	
 .end_macro
-# 	frees up array memory
-#.macro freeArray(%array)
-#	li $at, %array
-#	lw $at, ($at)
+
+#===================
+#Bitmap macros
+.macro bm_drawRectangleI(%leftX, %topY, %width, %height, %colorCode)
+	stackgrow(8)
+	stackstore(0, $v0)
+	stackstore(4, $a0)
+		lw $v0, macroDrawRectangleArray
+		setArrayI($v0, 0, %leftX)
+		setArrayI($v0, 1, %topY)
+		setArrayI($v0, 2, %width)
+		setArrayI($v0, 3, %height)
+		setArrayI($v0, 4, %colorCode)
+		move $a0, $v0
+		jal bm_drawRectangle
+	stackload(0, $v0)
+	stackload(4, $a0)
+	stackpop(8)
+.end_macro
+
+.macro bm_drawRectangle(%leftX, %topY, %width, %height, %colorCode)
+	stackgrow(8)
+	stackstore(0, $v0)
+	stackstore(4, $a0)
+		lw $v0, macroDrawRectangleArray
+		setArray($v0, 0, %leftX)
+		setArray($v0, 1, %topY)
+		setArray($v0, 2, %width)
+		setArray($v0, 3, %height)
+		setArrayI($v0, 4, %colorCode)
+		move $a0, $v0
+		jal bm_drawRectangle
 	
-#.end_macro
+	stackload(0, $v0)
+	stackload(4, $a0)
+	stackpop(8)
+	
+.end_macro
 
 # ============================================
 # DATA
@@ -146,6 +178,7 @@ magnitude: .word 6
 main:
 	# Setup Bitmap
 	jal bm_setup
+	jal bm_buildBackground
 	
 #	Set 
 	setseed(0)
@@ -238,19 +271,21 @@ input_boolean:
 print_card: # a0 is mask, a1 is max
 	fstart
 	# move stored values to stack
-	stackgrow(24)
+	stackgrow(32)
 	stackstore(0, $s2)
 	stackstore(4, $s4)
 	stackstore(8, $s5)
 	stackstore(12, $s6)
 	stackstore(16, $s7)
 	stackstore(20, $s1)
+	stackstore(24, $s0) #BM x
+	stackstore(24, $s7) #BM y
 	# move input to stored
 	move	$s2, $a0
 	move	$s4, $a1
 	
-	##bm: Reset Screen 
-	jal bm_buildBackground
+	li $s0, 30
+	li $s7, 75
 	
 	##find real card number
 	move $a0, $s2
@@ -258,6 +293,8 @@ print_card: # a0 is mask, a1 is max
 	addi $s1, $v0, 1
 	
 	
+	#BM: Reset card number
+	bm_drawRectangleI(241,35,15,30,0x654321)
 	##BM: Print card number
 	
 	li $a0, 241
@@ -281,15 +318,33 @@ print_card: # a0 is mask, a1 is max
 		bne	$t1, $s2, skip_print
 			print_int($s5)
 		print_str(",\t")
+		######### START BITMAP 	
+			li $t8, 10
+			li $t9, 20
+			bm_drawRectangle($s0,$s7,$t8,$t9,0x654321)
+			move $a0, $s0
+			move $a1, $s7
+			li $a2, 10
+			move $a3, $s5
+			jal bm_drawNumber
+			
+		######### end bitmap
 		
 		# increment print count ($s6)
 		addi	$s6, $s6, 1
+		
+		# Increment BITMAP X axis
+		addi 	$s0, $s0, 24
 		
 		# if print count ($s6) >= 8, newline and reset
 		slti	$t1, $s6, 8
 		bnez	$t1, skip_print
 		print_str("\n")
 		li	$s6, 0
+		# Increment BITMAP Y axis
+		li $s0, 30
+		addi 	$s7, $s7, 22
+		
 		skip_print:
 		
 		# increment index
@@ -304,7 +359,9 @@ print_card: # a0 is mask, a1 is max
 	stackload(12, $s6)
 	stackload(16, $s7)
 	stackload(20, $s1)
-	stackpop(24)
+	stackload(24, $s0) #width
+	stackload(24, $s7) #heigth
+	stackpop(32)
 	freturn
 	
 log2:
@@ -350,37 +407,7 @@ digit_length:
 # Possible TODO: Move to own file
 ###############
 
-#===================
-#Bitmap macros
-.macro bm_drawRectangleI(%leftX, %topY, %width, %height, %colorCode)
-	lw $v0, macroDrawRectangleArray
-	setArrayI($v0, 0, %leftX)
-	setArrayI($v0, 1, %topY)
-	setArrayI($v0, 2, %width)
-	setArrayI($v0, 3, %height)
-	setArrayI($v0, 4, %colorCode)
-	move $a0, $v0
-	jal bm_drawRectangle
-.end_macro
 
-.macro bm_drawRectangle(%leftX, %topY, %width, %height, %colorCode)
-	stackgrow(8)
-	stackstore(0, $v0)
-	stackstore(4, $a0)
-		lw $v0, macroDrawRectangleArray
-		setArray($v0, 0, %leftX)
-		setArray($v0, 1, %topY)
-		setArray($v0, 2, %width)
-		setArray($v0, 3, %height)
-		setArrayI($v0, 4, %colorCode)
-		move $a0, $v0
-		jal bm_drawRectangle
-	
-	stackload(0, $v0)
-	stackload(4, $a0)
-	stackpop(8)
-	
-.end_macro
 
 #===================
 #DATA Constants
@@ -431,9 +458,9 @@ bm_buildBackground:
 		bm_drawRectangleI(0,251,512,5,0x000000) #bottom
 		
 		li $a0, 30
-		li $a1, 35
-		li $a2, 40
-		li $a3, 1
+		li $a1, 75
+		li $a2, 50
+		li $a3, 234
 		jal bm_drawNumber
 		#jal bm_drawDigit
 		
@@ -522,9 +549,6 @@ bm_drawRectangle:
 	stackpop(36)
 	freturn
 	
-#bm_drawNumberGrid:
-#############
-# THis function Draws boxes around the places where the numbers will go
 
 bm_drawNumber:
 ##############
@@ -549,6 +573,8 @@ bm_drawNumber:
 		li $t2, 10
 		srl $t0, $a2, 2
 		add $t0, $t0, $a2
+		
+		jal digit_length
 		
 		
 		#jal digit_length
