@@ -255,7 +255,9 @@ print_card: # a0 is mask, a1 is max
 	##find real card number
 	move $a0, $s2
 	jal log2
-	move $s1, $v0
+	addi $s1, $v0, 1
+	
+	
 	##BM: Print card number
 	
 	li $a0, 241
@@ -265,7 +267,7 @@ print_card: # a0 is mask, a1 is max
 	jal bm_drawDigit
 	# print card label
 	print_str("\nCard: ")
-	print_int($s2)
+	print_int($s1)
 	print_str("\n")
 	
 	# while index ($s5) < max ($s4)
@@ -317,10 +319,9 @@ log2:
 		li $v0, -1
 		
 		log2_loop:
-			bnez $a0, log2_loop_exit
+			beqz $a0, log2_loop_exit
 			addi $v0, $v0, 1
 			srl $a0, $a0, 1
-			
 			
 				j log2_loop
 			
@@ -328,6 +329,20 @@ log2:
 		
 		
 	freturn 
+	
+digit_length:
+############
+# Finds the number of digits in $a0 and returns the number in $v0
+############
+	fstart
+		move $v0, $zero
+		digit_count_loop:
+			div $a0, $a0, 10
+			addi $v0, $v0, 1
+		
+		bnez $a0, digit_count_loop
+
+	freturn
 
 ###############
 #Bitmap Display Part
@@ -349,9 +364,9 @@ log2:
 .end_macro
 
 .macro bm_drawRectangle(%leftX, %topY, %width, %height, %colorCode)
-	#stackgrow(8)
-	#stackstore(0, $v0)
-	#stackstore(4, $a0)
+	stackgrow(8)
+	stackstore(0, $v0)
+	stackstore(4, $a0)
 		lw $v0, macroDrawRectangleArray
 		setArray($v0, 0, %leftX)
 		setArray($v0, 1, %topY)
@@ -361,9 +376,9 @@ log2:
 		move $a0, $v0
 		jal bm_drawRectangle
 	
-	#stackload(0, $v0)
-	#stackload(4, $a0)
-	#stackpop
+	stackload(0, $v0)
+	stackload(4, $a0)
+	stackpop(8)
 	
 .end_macro
 
@@ -415,6 +430,12 @@ bm_buildBackground:
 		bm_drawRectangleI(507,0,5,256,0x000000) #right
 		bm_drawRectangleI(0,251,512,5,0x000000) #bottom
 		
+		li $a0, 30
+		li $a1, 35
+		li $a2, 40
+		li $a3, 1
+		jal bm_drawNumber
+		#jal bm_drawDigit
 		
 	freturn
 
@@ -501,9 +522,58 @@ bm_drawRectangle:
 	stackpop(36)
 	freturn
 	
-bm_drawNumberGrid:
+#bm_drawNumberGrid:
 #############
 # THis function Draws boxes around the places where the numbers will go
+
+bm_drawNumber:
+##############
+# Draws the multi digit number in $a3
+# Params: 
+# $a0 - x
+# $a1 - y
+# $a2 - size
+# #a3 - the number 
+# Vars:
+# $t1 - our changable number
+# $t2 = 10
+# $t0 - ammount to pad between each number
+
+##############
+	fstart
+	stackgrow(12)
+	stackstore(0, $t1)
+	stackstore(4, $t2)
+	stackstore(8, $t0)
+		move $t1, $a3
+		li $t2, 10
+		srl $t0, $a2, 2
+		add $t0, $t0, $a2
+		
+		
+		#jal digit_length
+		#move $t1, $v0
+		
+		## Loop to find the digits from high to lo
+		bm_drawNumber_loop:
+			div $t1, $t2
+			mfhi $a3
+			mflo $t1 # get new number
+			#Draw number
+			jal bm_drawDigit
+			
+			add $a0, $a0, $t0 # add padding
+			
+			
+							
+		bnez $t1, bm_drawNumber_loop
+		
+		
+	stackload(0, $t1)
+	stackload(4, $t2)
+	stackload(8, $t0)
+	stackpop(12)
+	freturn
 
 #############
 bm_drawDigit:
@@ -513,7 +583,7 @@ bm_drawDigit:
 # $a0 - x
 # $a1 - y
 # $a2 - size
-# #a3 - the number
+# #a3 - the digit
 #############
 	fstart
 		bne $a3, 1, bm_drawNumber_next1
@@ -542,7 +612,7 @@ bm_drawDigit:
 		bm_drawNumber_next5:
 		
 		bne $a3, 6, bm_drawNumber_next6
-			jal bm_drawDigit7 # draw 6
+			jal bm_drawDigit6 # draw 6
 		j bm_drawNumber_return
 		bm_drawNumber_next6:
 		
