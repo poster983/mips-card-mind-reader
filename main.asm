@@ -252,6 +252,15 @@ main:
 	print_str("Your number is: ")
 	print_int($s7)
 	print_str("\n")
+	
+	# BITMAP: Show final number
+	move $a0, $s7
+	jal digit_length 
+	move $t1, $v0
+	
+	jal bm_buildBackground
+	
+	
 exit
 
 
@@ -319,12 +328,12 @@ print_card: # a0 is mask, a1 is max
 			print_int($s5)
 		print_str(",\t")
 		######### START BITMAP 	
-			li $t8, 10
-			li $t9, 20
+			li $t8, 13
+			li $t9, 26
 			bm_drawRectangle($s0,$s7,$t8,$t9,0x654321)
 			move $a0, $s0
 			move $a1, $s7
-			li $a2, 10
+			li $a2, 13
 			move $a3, $s5
 			jal bm_drawNumber
 			
@@ -334,7 +343,7 @@ print_card: # a0 is mask, a1 is max
 		addi	$s6, $s6, 1
 		
 		# Increment BITMAP X axis
-		addi 	$s0, $s0, 24
+		addi 	$s0, $s0, 60
 		
 		# if print count ($s6) >= 8, newline and reset
 		slti	$t1, $s6, 8
@@ -343,7 +352,7 @@ print_card: # a0 is mask, a1 is max
 		li	$s6, 0
 		# Increment BITMAP Y axis
 		li $s0, 30
-		addi 	$s7, $s7, 22
+		addi 	$s7, $s7, 40
 		
 		skip_print:
 		
@@ -457,12 +466,6 @@ bm_buildBackground:
 		bm_drawRectangleI(507,0,5,256,0x000000) #right
 		bm_drawRectangleI(0,251,512,5,0x000000) #bottom
 		
-		li $a0, 30
-		li $a1, 75
-		li $a2, 50
-		li $a3, 234
-		jal bm_drawNumber
-		#jal bm_drawDigit
 		
 	freturn
 
@@ -562,19 +565,32 @@ bm_drawNumber:
 # $t1 - our changable number
 # $t2 = 10
 # $t0 - ammount to pad between each number
+# $t3 - number of digits / temp
 
 ##############
 	fstart
-	stackgrow(12)
+	stackgrow(16)
 	stackstore(0, $t1)
 	stackstore(4, $t2)
 	stackstore(8, $t0)
+	stackstore(12, $t3)
 		move $t1, $a3
 		li $t2, 10
 		srl $t0, $a2, 2
 		add $t0, $t0, $a2
 		
+		stackgrow(4)
+		stackstore(0, $a0)
+		move $a0, $a3 # save a0 bc it gets over writain
 		jal digit_length
+		stackload(0, $a0)
+		stackpop(4)
+		move $t3, $v0
+		addi $t3, $t3, -1
+		
+		# calculate start address 
+		mul $t3, $t3, $t0
+		add $a0, $a0, $t3
 		
 		
 		#jal digit_length
@@ -588,7 +604,7 @@ bm_drawNumber:
 			#Draw number
 			jal bm_drawDigit
 			
-			add $a0, $a0, $t0 # add padding
+			sub $a0, $a0, $t0 # Move our start address back
 			
 			
 							
@@ -598,7 +614,8 @@ bm_drawNumber:
 	stackload(0, $t1)
 	stackload(4, $t2)
 	stackload(8, $t0)
-	stackpop(12)
+	stackload(12, $t3)
+	stackpop(16)
 	freturn
 
 #############
