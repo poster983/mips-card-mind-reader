@@ -202,7 +202,7 @@ main:
 	slt	$t0, $s0, $s1
 	addi	$s0, $s0, 1
 	bnez 	$t0, do_main
-	beqz	$s3, do_main
+	#beqz	$s3, do_main
 	j	postwhile_main
 	do_main:
 		# With Generator 0, set $t1 to random value
@@ -211,13 +211,7 @@ main:
 		
 		# $s2 = mask = 1 << max_magnitude
 		li 	$s2, 1
-		li	$t2, 0
-		grow_mag_1:
-			beq	$t2, $t1, grow_done_1
-			addi	$t2, $t2, 1
-			sll	$s2, $s2, 1
-			j	grow_mag_1
-		grow_done_1:
+		sllv	$s2, $s2, $t1
 		
 		# if mask ($s2) in history ($s3), retry
 		and 	$t0, $s2, $s3
@@ -338,7 +332,7 @@ print_card: # a0 is mask, a1 is max
 			print_int($s5)
 		print_str(",\t")
 		######### START BITMAP 	
-			li $t8, 13
+			li $t8, 30
 			li $t9, 26
 			bm_drawRectangle($s0,$s7,$t8,$t9,0x654321)
 			move $a0, $s0
