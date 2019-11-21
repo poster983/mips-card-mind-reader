@@ -258,7 +258,17 @@ main:
 	jal digit_length 
 	move $t1, $v0
 	
+	
 	jal bm_buildBackground
+	
+	
+	
+	li $a0, 192
+	li $a1, 76
+	li $a2, 40
+	move $a3, $s7
+	jal bm_drawNumber
+	
 	
 	
 exit
