@@ -193,7 +193,13 @@ durations: .half
 .text
 .globl main
 main:
-	print_str("\nOld Town Road Number Guesser\nby: Philip Martin, Joseph Hassel, and Kurt Eggers\n")
+	# Setup Bitmap
+	jal bm_setup
+	jal bm_buildBackground
+	
+	#Title
+	print_str("\nOld Town Road Number Guesser\nby: Philip Martin, Joseph Hassell, and Kurt Eggers\n")
+	
 	# Play Song
 	li 	$t1, 0
 	lw 	$t0, loopIntro
@@ -203,11 +209,7 @@ main:
 	slt	$t2, $t1, $t0
 	bnez	$t2, intro
 	
-	# Setup Bitmap
-	jal bm_setup
-	jal bm_buildBackground
-	
-#	Set 
+	# Set random seed
 	setseed(0)
 	
 	li	$s0, 0
