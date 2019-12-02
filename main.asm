@@ -87,26 +87,6 @@
 	addi 	$sp, $sp, 4
 	jr 	$ra
 .end_macro
-#	Song player
-.macro	song
-	li $s0, 0
-	# Total notes
-	lw $t7, NoteNum
-	sll $t7, $t7, 1
-	# Instrument
-	li $a2, 1
-	# Volume
-	li $a3, 50
-	# Loop for notes and delays
-	loop:
-	lh $v0, calls($s0)
-	lh $a0, notes($s0)
-	lh $a1, durations($s0)
-	syscall
-	
-	addi $s0, $s0, 2
-	bne $s0, $t7, loop
-.end_macro
 #	Exit program
 .macro exit
 	li	$v0,10
@@ -245,7 +225,7 @@ main:
 	li 	$t1, 0
 	lw 	$t0, loopIntro
 	intro:
-	song
+	jal 	play_song
 	addi	$t1, $t1, 1
 	slt	$t2, $t1, $t0
 	bnez	$t2, intro
@@ -333,13 +313,45 @@ main:
 	li 	$t1, 0
 	lw 	$t0, loopOutro
 	outro:
-	song
+	jal	play_song
 	addi	$t1, $t1, 1
 	slt	$t2, $t1, $t0
 	bnez	$t2, outro
 exit
 
-
+play_song:
+	fstart
+	stackgrow(20)
+	stackstore(0, $s0)
+	stackstore(4, $a2)
+	stackstore(8, $a3)
+	stackstore(12, $a0)
+	stackstore(16, $a1)
+	li $s0, 0
+	# Total notes
+	lw $t7, NoteNum
+	sll $t7, $t7, 1
+	# Instrument
+	li $a2, 1
+	# Volume
+	li $a3, 50
+	# Loop for notes and delays
+	loop:
+	lh $v0, calls($s0)
+	lh $a0, notes($s0)
+	lh $a1, durations($s0)
+	syscall
+	
+	addi $s0, $s0, 2
+	bne $s0, $t7, loop
+	
+	stackload(0, $s0)
+	stackload(4, $a2)
+	stackload(8, $a3)
+	stackload(12, $a0)
+	stackload(16, $a1)
+	stackpop(20)
+	freturn
 input_boolean:
 	fstart
 	li 	$v0, 12
