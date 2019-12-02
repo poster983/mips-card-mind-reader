@@ -87,26 +87,24 @@
 	addi 	$sp, $sp, 4
 	jr 	$ra
 .end_macro
-#	Ending Sound
+#	Song player
 .macro	song
 	li $s0, 0
-	li $t7, 37
+	# Total notes
+	lw $t7, NoteNum
+	sll $t7, $t7, 1
+	# Instrument
+	li $a2, 1
+	# Volume
+	li $a3, 50
+	# Loop for notes and delays
 	loop:
-	sll $s1, $s0, 1
-	lh $t0, calls($s1)
-	lh $t1, notes($s1)
-	lh $t2, durations($s1)
-	lh $t3, instruments($s1)
-	lh $t4, volumes($s1)
-
-	move $v0, $t0
-	move $a0, $t1
-	move $a1, $t2
-	move $a2, $t3
-	move $a3, $t4
+	lh $v0, calls($s0)
+	lh $a0, notes($s0)
+	lh $a1, durations($s0)
 	syscall
-
-	addi $s0, $s0, 1
+	
+	addi $s0, $s0, 2
 	bne $s0, $t7, loop
 .end_macro
 #	Exit program
@@ -192,16 +190,61 @@
 .align 2
 frameBuffer: .space 0x80000 # space for a 512x256 image in the 0x10010000 data range
 magnitude: .word 6
-calls: .half 33, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 31, 32, 33, 33, 33, 33, 33, 31, 32, 33
-notes: .half 64, 64, 400, 64, 400, 64, 400, 64, 700, 62, 700, 60, 700, 57, 400, 57, 400, 64, 400, 62, 700, 62, 700, 57, 400, 57, 400, 55, 800, 62, 62, 64, 60, 59, 59, 450, 57
-durations: .half 900, 300, 0, 300, 0, 300, 0, 600, 0, 600, 0, 600, 0, 300, 0, 300, 0, 300, 0, 600, 0, 600, 0, 300, 0, 300, 0, 300, 0, 1200, 300, 300, 600, 600, 450, 0, 200
-instruments: .half 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-volumes: .half 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100
+NoteNum: .word 41
+loopIntro: .word 1
+loopOutro: .word 3
+
+# All notes for the song
+calls: .half 
+	32,
+	31, 32, 	31, 32, 	31, 32, 	31, 32,
+	31, 32, 	31, 32, 	31, 32, 	31, 32, 
+	31, 32,		31, 32,		31, 32,		31, 32,
+	31, 32,		31, 32,		31, 32,		31, 32,
+	31, 32,		31, 32,		31, 32,		31, 32
+notes: .half 
+	250,
+	75, 250, 	75, 250, 	75, 250, 	75, 500, 
+	73, 500,	71, 500,	68, 250, 	68, 250,
+	75, 250, 	73, 500, 	71, 500,	68, 250,
+	68, 250,	67, 750,	73, 750,	73, 250,
+	75, 250,	71, 500,	70, 500,	68, 500
+durations: .half 
+	0,
+	500, 0, 	500, 0, 	500, 0, 	750, 0, 
+	750, 0,		500, 0,		500, 0, 	500, 0,
+	500, 0, 	750, 0,		750, 0,		500, 0,
+	500, 0,		550, 0,		1000, 0,	500, 0,
+	500, 0,		500, 0,		500, 0,		500, 0
+instruments: .half 
+	0,
+	1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1
+volumes: .half 
+	50,
+	50, 50, 50, 50, 50, 50, 50, 50, 
+	50, 50, 50, 50, 50, 50, 50, 50,
+	50, 50, 50, 50, 50, 50, 50, 50,
+	50, 50, 50, 50, 50, 50, 50, 50,
+	50, 50, 50, 50, 50, 50, 50, 50
 # ============================================
 # PROGRAM
 .text
 .globl main
 main:
+	print_str("\nOld Town Road Number Guesser\nby: Philip Martin, Joseph Hassel, and Kurt Eggers\n")
+	# Play Song
+	li 	$t1, 0
+	lw 	$t0, loopIntro
+	intro:
+	song
+	addi	$t1, $t1, 1
+	slt	$t2, $t1, $t0
+	bnez	$t2, intro
+	
 	# Setup Bitmap
 	jal bm_setup
 	jal bm_buildBackground
@@ -215,13 +258,7 @@ main:
 	# $s3 = history (bits covered)
 	# $s4 = 1 << max_magnitude
 	li 	$s4, 1
-	grow_mag_0:
-		beq	$t0, $s1, grow_done_0
-		addi	$t0, $t0, 1
-		sll	$s4, $s4, 1
-		j	grow_mag_0
-	grow_done_0:
-	
+	sllv	$s4, $s4, $s1
 	
 	# While Loop
 	while_main:
@@ -289,9 +326,14 @@ main:
 	move $a3, $s7
 	jal bm_drawNumber
 	
-	
-	
+	# Play song
+	li 	$t1, 0
+	lw 	$t0, loopOutro
+	outro:
 	song
+	addi	$t1, $t1, 1
+	slt	$t2, $t1, $t0
+	bnez	$t2, outro
 exit
 
 
@@ -299,13 +341,27 @@ input_boolean:
 	fstart
 	li 	$v0, 12
 	syscall
+	# If input is Y or y
 	li 	$t0, 89
 	beq	$v0, $t0, input_boolean_y
 	addi	$t0, $t0, 32
 	beq	$v0, $t0, input_boolean_y
-	freturn ($0)
+	# if input it N or n
+	li 	$t0, 78
+	beq	$v0, $t0, input_boolean_n
+	addi	$t0, $t0, 32
+	beq	$v0, $t0, input_boolean_n
+	# else, print error
+	print_str("\nError: Incorrect Input, Valid: Y, y, N, n\nRetry: ")
+	jal input_boolean
+	freturn
+	# Y/y return true
 	input_boolean_y:
 	li	$v0, 1
+	freturn
+	# N/n return false
+	input_boolean_n:
+	li	$v0, 0
 	freturn
 	
 print_card: # a0 is mask, a1 is max
