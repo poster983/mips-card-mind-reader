@@ -292,7 +292,7 @@ print_card: # a0 is mask, a1 is max
 	stackstore(16, $s7)
 	stackstore(20, $s1)
 	stackstore(24, $s0) #BM x
-	stackstore(24, $s7) #BM y
+	stackstore(28, $s7) #BM y
 	# move input to stored
 	move	$s2, $a0
 	move	$s4, $a1
@@ -373,7 +373,7 @@ print_card: # a0 is mask, a1 is max
 	stackload(16, $s7)
 	stackload(20, $s1)
 	stackload(24, $s0) #width
-	stackload(24, $s7) #heigth
+	stackload(28, $s7) #heigth
 	stackpop(32)
 	freturn
 	
