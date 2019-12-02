@@ -170,46 +170,24 @@
 .align 2
 frameBuffer: .space 0x80000 # space for a 512x256 image in the 0x10010000 data range
 magnitude: .word 6
-NoteNum: .word 41
+
 loopIntro: .word 1
 loopOutro: .word 3
 
-# All notes for the song
-calls: .half 
-	32,
-	31, 32, 	31, 32, 	31, 32, 	31, 32,
-	31, 32, 	31, 32, 	31, 32, 	31, 32, 
-	31, 32,		31, 32,		31, 32,		31, 32,
-	31, 32,		31, 32,		31, 32,		31, 32,
-	31, 32,		31, 32,		31, 32,		31, 32
+numNotes: .word 20
+# All notes and durations for the song
 notes: .half 
-	250,
 	75, 250, 	75, 250, 	75, 250, 	75, 500, 
 	73, 500,	71, 500,	68, 250, 	68, 250,
 	75, 250, 	73, 500, 	71, 500,	68, 250,
 	68, 250,	67, 750,	73, 750,	73, 250,
 	75, 250,	71, 500,	70, 500,	68, 500
 durations: .half 
-	0,
 	500, 0, 	500, 0, 	500, 0, 	750, 0, 
 	750, 0,		500, 0,		500, 0, 	500, 0,
 	500, 0, 	750, 0,		750, 0,		500, 0,
-	500, 0,		550, 0,		1000, 0,	500, 0,
-	500, 0,		500, 0,		500, 0,		500, 0
-instruments: .half 
-	0,
-	1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1
-volumes: .half 
-	50,
-	50, 50, 50, 50, 50, 50, 50, 50, 
-	50, 50, 50, 50, 50, 50, 50, 50,
-	50, 50, 50, 50, 50, 50, 50, 50,
-	50, 50, 50, 50, 50, 50, 50, 50,
-	50, 50, 50, 50, 50, 50, 50, 50
+	500, 0,		1000, 0,	1000, 0,	500, 0,
+	500, 0,		750, 0,		750, 0,		750, 0
 # ============================================
 # PROGRAM
 .text
@@ -325,18 +303,24 @@ play_song:
 	stackstore(12, $a0)
 	stackstore(16, $a1)
 	li $s0, 0
-	# Total notes
-	lw $t7, NoteNum
-	sll $t7, $t7, 1
+	# Array length = numNotes * 4
+	lw $t7, numNotes
+	sll $t7, $t7, 2
 	# Instrument
 	li $a2, 1
 	# Volume
 	li $a3, 50
 	# Loop for notes and delays
 	loop:
-	lh $v0, calls($s0)
+	# note
+	li $v0, 31
 	lh $a0, notes($s0)
 	lh $a1, durations($s0)
+	syscall
+	# delay
+	addi $s0, $s0, 2
+	li $v0, 32
+	lh $a0, notes($s0)
 	syscall
 	
 	addi $s0, $s0, 2
@@ -349,6 +333,8 @@ play_song:
 	stackload(16, $a1)
 	stackpop(20)
 	freturn
+	
+	
 input_boolean:
 	fstart
 	li 	$v0, 12
